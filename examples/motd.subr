@@ -1,0 +1,140 @@
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# Copyright (c) 2022 Steven Stallion <sstallion@gmail.com>
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE AUTHOR AND CONTRIBUTORS "AS IS" AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+
+# Displays OS version (copied from /etc/rc.d/motd).
+get_version()
+{
+	uname -v | sed -e 's,^\([^#]*\) #\(.* [1-2][0-9][0-9][0-9]\).*/\([^\]*\) $,\1 (\3) #\2,'
+}
+
+# Displays baseboard information.
+get_baseboard()
+{
+	printf '%s %s %s %s' \
+		$(kenv -q smbios.planar.maker) \
+		$(kenv -q smbios.planar.product) \
+		$(kenv -q smbios.planar.version) \
+		$(kenv -q smbios.planar.serial)
+}
+
+# Displays processor information.
+get_processor()
+{
+	sysctl -n hw.model
+}
+
+# Displays IPv4/IPv6 addresses assigned to all interfaces, filtering
+# localhost and link-local addresses.
+get_ipaddrs()
+{
+	ifconfig -a | awk '
+	/inet6?/ && $2 != "127.0.0.1" && $2 != "::1" &&
+		    $2 !~ "^169\.254\." && $2 !~ "^fe80::" {
+		print $2
+	}' | xargs
+}
+
+# Displays system load.
+get_load()
+{
+	sysctl -n vm.loadavg | awk '{ printf "%s, %s, %s\n", $2, $3, $4 }'
+}
+
+# To simplify displaying information provided by top(1), a temp file is
+# created and subsequently removed once the motd script exits.
+TOPFILE="$(mktemp -t motd)"
+trap "rm -f ${TOPFILE}" EXIT
+top -b >"${TOPFILE}"
+
+# Displays remaining line after matching pattern in top(1).
+get_top()
+{
+	local name
+	name=$1
+
+	awk "
+	/^${name}:/ {
+		sub(/^${name}:[ \t]+/, \"\")
+		gsub(/  /, \" \")
+		print
+	}" $TOPFILE
+}
+
+# Displays next line after matching pattern in top(1).
+get_top2()
+{
+	local name
+	name=$1
+
+	awk "
+	/^${name}:/ {
+		getline
+		sub(/^[ \t]+/, \"\")
+		gsub(/  /, \" \")
+		print
+	}" $TOPFILE
+}
+
+# Displays uptime in a friendlier format than w(1).
+get_uptime()
+{
+	local boottime uptime day hour minute second first name
+	boottime=$(sysctl -n kern.boottime | sed -e 's/.*sec = \([0-9]*\),.*$/\1/')
+	uptime=$(( $(date +%s) - boottime ))
+	day=$(( uptime / 86400 ))
+	hour=$(( uptime / 3600 % 24 ))
+	minute=$(( uptime / 60 % 60 ))
+	second=$(( uptime % 60 ))
+
+	# Reporting seconds is less interesting after the first hour has
+	# passed. Once elapsed, we round up to the nearest minute:
+	if [ $day -gt 0 -o $hour -gt 0 ]; then
+		if [ $second -ge 30 ]; then
+			if [ $minute -eq 59 ]; then
+				if [ $hour -eq 23 ]; then
+					day=$(( day + 1 ))
+					hour=0
+				else
+					hour=$(( hour + 1 ))
+				fi
+				minute=0
+			else
+				minute=$(( minute + 1 ))
+			fi
+		fi
+		second=0
+	fi
+
+	first=1
+	for name in day hour minute second; do
+		eval val=\$$name
+		if [ $val -gt 0 ]; then
+			[ $first -ne 0 ] && first=0 || printf ', '
+			printf '%d %s' $val $name
+			[ $val -gt 1 ] && printf 's'
+		fi
+	done
+	printf '\n'
+}

@@ -1,0 +1,10 @@
+#!/bin/sh
+
+TEMPLATE="/etc/motd.template"
+
+# Display OS version (copied from /etc/rc.d/motd):
+uname -v | sed -e 's,^\([^#]*\) #\(.* [1-2][0-9][0-9][0-9]\).*/\([^\]*\) $,\1 (\3) #\2,'
+
+if [ -f "${TEMPLATE}" ]; then
+	cat "${TEMPLATE}"
+fi
