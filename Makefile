@@ -42,7 +42,7 @@ FILESGROUPS=	DOCS EXAMPLES
 DOCS=		CONTRIBUTING.md README.md
 DOCSDIR=	${SHAREDIR}/doc/dynamic_motd
 
-EXAMPLES=	examples/rc.motd examples/motd.subr
+EXAMPLES=	examples/motd.subr examples/rc.motd
 EXAMPLESDIR=	${SHAREDIR}/examples/dynamic_motd
 
 CONFGROUPS=	CONFETC CONFRCD
