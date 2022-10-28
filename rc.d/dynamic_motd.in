@@ -35,11 +35,11 @@ desc="Dynamic /var/run/motd"
 rcvar="${name}"
 
 set_rcvar dynamic_motd "NO"
-set_rcvar motd_script "/usr/local/etc/rc.motd"
+set_rcvar motd_script "@@PREFIX@@/etc/rc.motd"
 
 load_rc_config $name
 
-command="/usr/local/libexec/${name}"
+command="@@PREFIX@@/libexec/${name}"
 command_args="${motd_script}"
 command_interpreter="/bin/sh"
 start_precmd="${name}_prestart"

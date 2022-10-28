@@ -53,6 +53,12 @@ CONFRCD=	rc.d/dynamic_motd
 CONFRCDDIR=	${CONFDIR}/rc.d
 CONFRCDMODE=	${BINMODE}
 
+CLEANFILES=	rc.d/dynamic_motd
+PREFIX_SUB=	-e 's,@@PREFIX@@,${PREFIX},g'
+
+rc.d/dynamic_motd: rc.d/dynamic_motd.in
+	sed ${PREFIX_SUB} ${.ALLSRC} >${.TARGET}
+
 beforeinstall: installdirs
 afterinstall: installconfig
 
