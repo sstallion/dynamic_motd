@@ -33,7 +33,7 @@ To make a new release, follow these steps:
 
 2. Create a release tag by issuing:
 
-       $ git tag -a -m "Release v<version>" v<version>
+       $ git tag -a -m 'Release v<version>' v<version>
 
 3. Push the release tag to the remote repository and verify the results of the
    [Release][5] workflow:

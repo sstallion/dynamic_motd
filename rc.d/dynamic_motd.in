@@ -47,8 +47,11 @@ required_files="${motd_script}"
 
 dynamic_motd_prestart()
 {
-	! checkyesno update_motd ||
-	    err 1 "Set update_motd to NO in /etc/rc.conf."
+	if ! [ "${_rc_prefix}" = "one" -o -n "${rc_fast}" -o -n "${rc_force}" ]; then
+		checkyesno update_motd &&
+		    err 1 "Set update_motd to NO in /etc/rc.conf."
+	fi
+	return 0
 }
 
 run_rc_command "$1"

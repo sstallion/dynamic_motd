@@ -5,7 +5,7 @@ on:
     branches:
       - master
 jobs:
-  install:
+  test:
     runs-on: macos-12
     steps:
       - uses: actions/checkout@v3
@@ -13,6 +13,23 @@ jobs:
         with:
           copyback: false
           release: "13.0"
+          usesh: true
+          prepare: |
+            pkg install -y expect
           run: |
-            setenv DESTDIR `mktemp -d`
+            set -o errexit
+            set -o xtrace
             make install
+            cat >/usr/local/etc/rc.motd <<EOF
+              echo "${GITHUB_SHA}"
+            EOF
+            service dynamic_motd onestart
+            trap 'service dynamic_motd stop' EXIT
+            expect <<EOF
+              spawn cat /var/run/motd
+              expect "${GITHUB_SHA}\r\n"
+              expect eof
+              set result [expr {\$expect_out(buffer) == ""}]
+              puts [expr {\$result ? "PASSED" : "FAILED"}]
+              exit [expr {\$result == 0}]
+            EOF
