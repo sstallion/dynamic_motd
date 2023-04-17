@@ -58,7 +58,7 @@ all: rc.d/dynamic_motd
 rc.d/dynamic_motd: rc.d/dynamic_motd.in
 	sed ${PREFIX_SUB} ${.ALLSRC} >${.TARGET}
 
-install: installdirs
+install: all installdirs
 	${INSTALL_SCRIPT} ${CONFRCD}  ${DESTDIR}${CONFRCDDIR}
 	${INSTALL_DATA}   ${CONFETC}  ${DESTDIR}${CONFDIR}
 	${INSTALL_SCRIPT} ${SCRIPTS}  ${DESTDIR}${SCRIPTSDIR}
