@@ -32,12 +32,8 @@ CONFDIR=	${PREFIX}/etc
 LIBEXECDIR=	${PREFIX}/libexec
 SHAREDIR=	${PREFIX}/share
 
-DIRS=		SCRIPTSDIR
-
 SCRIPTS=	dynamic_motd
 SCRIPTSDIR=	${LIBEXECDIR}
-
-FILESGROUPS=	DOCS EXAMPLES
 
 DOCS=		CONTRIBUTING.md README.md
 DOCSDIR=	${SHAREDIR}/doc/dynamic_motd
@@ -45,21 +41,32 @@ DOCSDIR=	${SHAREDIR}/doc/dynamic_motd
 EXAMPLES=	examples/motd.subr examples/rc.motd
 EXAMPLESDIR=	${SHAREDIR}/examples/dynamic_motd
 
-CONFGROUPS=	CONFETC CONFRCD
-
 CONFETC=	rc.motd.sample
 
 CONFRCD=	rc.d/dynamic_motd
 CONFRCDDIR=	${CONFDIR}/rc.d
-CONFRCDMODE=	${BINMODE}
 
 CLEANFILES=	rc.d/dynamic_motd
 PREFIX_SUB=	-e 's,@@PREFIX@@,${PREFIX},g'
 
+INSTALL_DATA=	install -m 0644
+INSTALL_SCRIPT=	install -m 0555
+MKDIR=		mkdir -p
+
+all: rc.d/dynamic_motd
+
 rc.d/dynamic_motd: rc.d/dynamic_motd.in
 	sed ${PREFIX_SUB} ${.ALLSRC} >${.TARGET}
 
-beforeinstall: installdirs
-afterinstall: installconfig
+install: installdirs
+	${INSTALL_SCRIPT} ${CONFRCD}  ${DESTDIR}${CONFRCDDIR}
+	${INSTALL_DATA}   ${CONFETC}  ${DESTDIR}${CONFDIR}
+	${INSTALL_SCRIPT} ${SCRIPTS}  ${DESTDIR}${SCRIPTSDIR}
+	${INSTALL_DATA}   ${DOCS}     ${DESTDIR}${DOCSDIR}
+	${INSTALL_DATA}   ${EXAMPLES} ${DESTDIR}${EXAMPLESDIR}
 
-.include <bsd.prog.mk>
+installdirs:
+.for dir in ${CONFRCDDIR} ${CONFDIR} ${SCRIPTSDIR} ${DOCSDIR} ${EXAMPLESDIR}
+	${MKDIR} ${DESTDIR}${dir}
+.endfor
+
