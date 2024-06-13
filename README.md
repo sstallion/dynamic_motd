@@ -20,9 +20,9 @@ See [Configuration](#configuration) for more details.
 
 ### FreeBSD Packages
 
-The `sysutils/dynamic_motd` package can be installed by issuing:
+The `dynamic_motd` package can be installed by issuing:
 
-    # pkg install -y sysutils/dynamic_motd
+    # pkg install dynamic_motd
 
 ### FreeBSD Ports
 
