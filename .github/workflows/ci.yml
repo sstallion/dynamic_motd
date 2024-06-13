@@ -6,13 +6,13 @@ on:
       - master
 jobs:
   test:
-    runs-on: macos-12
+    runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: vmactions/freebsd-vm@v0
+      - uses: actions/checkout@v4
+      - uses: vmactions/freebsd-vm@v1
         with:
           copyback: false
-          release: "13.0"
+          release: "13.3"
           usesh: true
           prepare: |
             pkg install -y expect

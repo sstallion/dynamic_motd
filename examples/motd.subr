@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: BSD-2-Clause
 #
-# Copyright (c) 2022 Steven Stallion <sstallion@gmail.com>
+# Copyright (c) 2024 Steven Stallion <sstallion@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -23,6 +23,15 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
 # SUCH DAMAGE.
 
+if [ -r /etc/defaults/rc.conf ]; then
+	. /etc/defaults/rc.conf
+	source_rc_confs
+elif [ -r /etc/rc.conf ]; then
+	. /etc/rc.conf
+fi
+
+: ${motd_sitename:=$(hostname -d)}
+
 # Displays OS version (copied from /etc/rc.d/motd).
 get_version()
 {
@@ -33,10 +42,10 @@ get_version()
 get_baseboard()
 {
 	printf '%s %s %s %s' \
-		$(kenv -q smbios.planar.maker) \
-		$(kenv -q smbios.planar.product) \
-		$(kenv -q smbios.planar.version) \
-		$(kenv -q smbios.planar.serial)
+		"$(kenv -q smbios.planar.maker)" \
+		"$(kenv -q smbios.planar.product)" \
+		"$(kenv -q smbios.planar.version)" \
+		"$(kenv -q smbios.planar.serial)"
 }
 
 # Displays processor information.
@@ -56,45 +65,16 @@ get_ipaddrs()
 	}' | xargs
 }
 
+# Displays host information.
+get_host()
+{
+	printf '%s (%s)' "$(hostname)" "$(get_ipaddrs)"
+}
+
 # Displays system load.
 get_load()
 {
 	sysctl -n vm.loadavg | awk '{ printf "%s, %s, %s\n", $2, $3, $4 }'
-}
-
-# To simplify displaying information provided by top(1), a temp file is
-# created and subsequently removed once the motd script exits.
-TOPFILE="$(mktemp -t motd)"
-trap "rm -f ${TOPFILE}" EXIT
-top -b >"${TOPFILE}"
-
-# Displays remaining line after matching pattern in top(1).
-get_top()
-{
-	local name
-	name=$1
-
-	awk "
-	/^${name}:/ {
-		sub(/^${name}:[ \t]+/, \"\")
-		gsub(/  /, \" \")
-		print
-	}" $TOPFILE
-}
-
-# Displays next line after matching pattern in top(1).
-get_top2()
-{
-	local name
-	name=$1
-
-	awk "
-	/^${name}:/ {
-		getline
-		sub(/^[ \t]+/, \"\")
-		gsub(/  /, \" \")
-		print
-	}" $TOPFILE
 }
 
 # Displays uptime in a friendlier format than w(1).
@@ -132,9 +112,35 @@ get_uptime()
 		eval val=\$$name
 		if [ $val -gt 0 ]; then
 			[ $first -ne 0 ] && first=0 || printf ', '
-			printf '%d %s' $val $name
+			printf '%d %s' "${val}" "${name}"
 			[ $val -gt 1 ] && printf 's'
 		fi
 	done
 	printf '\n'
 }
+
+# Reads statistics from top(1), removing extra whitespace.
+read_stats()
+{
+	{
+		read -r motd_stats_cpu
+		read -r motd_stats_mem
+		read -r motd_stats_arc
+		read -r motd_stats_arc2
+		read -r motd_stats_swap
+	} <<-EOF
+	$(top -b | awk '/^CPU:/, /^Swap:/ {
+		sub(/^([[:alpha:]]+:)?[[:blank:]]+/, "")
+		gsub(/[[:blank:]]{2,}/, " ")
+		print
+	}')
+	EOF
+}
+
+motd_version=$(get_version)
+motd_baseboard=$(get_baseboard)
+motd_processor=$(get_processor)
+motd_host=$(get_host)
+motd_load=$(get_load)
+motd_uptime=$(get_uptime)
+read_stats

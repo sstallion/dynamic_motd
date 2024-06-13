@@ -1,7 +1,7 @@
 #!/bin/sh
 # SPDX-License-Identifier: BSD-2-Clause
 #
-# Copyright (c) 2022 Steven Stallion <sstallion@gmail.com>
+# Copyright (c) 2024 Steven Stallion <sstallion@gmail.com>
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -26,26 +26,26 @@
 
 . /usr/local/etc/motd.subr
 
-# Stylize domain if FIGlet is installed:
+# Stylize site name if FIGlet is installed:
 if command -v figlet >/dev/null; then
-	figlet $(hostname -d)
+	figlet "${motd_sitename}"
 fi
 
 # Display system information:
 cat <<EOF
 
-$(get_version)
+${motd_version}
 
-$(get_baseboard)
-$(get_processor)
+${motd_baseboard}
+${motd_processor}
 
-  Host: $(hostname -f) ($(get_ipaddrs))
-    Up: $(get_uptime)
-   CPU: $(get_top  'CPU')
-   Mem: $(get_top  'Mem')
-   ARC: $(get_top  'ARC')
-        $(get_top2 'ARC')
-  Swap: $(get_top  'Swap')
-  Load: $(get_load)
+  Host: ${motd_host}
+    Up: ${motd_uptime}
+   CPU: ${motd_stats_cpu}
+   Mem: ${motd_stats_mem}
+   ARC: ${motd_stats_arc}
+        ${motd_stats_arc2}
+  Swap: ${motd_stats_swap}
+  Load: ${motd_load}
 
 EOF
